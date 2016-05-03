@@ -1,0 +1,77 @@
+<h3>Records for {{ place }} ({{ station }}) on {{ when }}</h3>
+
+<style>
+  ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  .records {
+    display: inline-block;
+    width: 49%;
+  }
+</style>
+
+<div class="records">
+  <div>Record Highs</div>
+  <ul>
+  {{#each maxHighs }}
+    <li>
+      {{ this.rank }}:  {{ this.value }}°F
+    </li>
+  {{/each }}
+  </ul>
+</div>
+
+<div class="records">
+  <div>Record Lows</div>
+  <ul>
+  {{#each minLows }}
+    <li>
+      {{ this.rank }}:  {{ this.value }}°F
+    </li>
+  {{/each }}
+  </ul>
+</div>
+
+<div class="records">
+  <div>Lowest Highs</div>
+  <ul>
+  {{#each minHighs }}
+    <li>
+      {{ this.rank }}:  {{ this.value }}°F
+    </li>
+  {{/each }}
+  </ul>
+</div>
+
+<div class="records">
+  <div>Highest Lows</div>
+  <ul>
+  {{#each maxLows }}
+    <li>
+      {{ this.rank }}:  {{ this.value }}°F
+    </li>
+  {{/each }}
+  </ul>
+</div>
+
+{{> start-end-temperature }}
+
+<hr>
+
+<div class="records">
+  <div>Record Precip (hundredths on an inch)</div>
+  <ul>
+  {{#each precip }}
+    <li>
+      {{ this.rank }}:  {{ this.value }}
+    </li>
+  {{/each }}
+  </ul>
+</div>
+
+{{> start-end-precip }}
+
+{{> back }}
+
+{{> attribution }}

@@ -1,0 +1,27 @@
+<h3>{{ records.length }} highest recorded temperatures at {{ place }} ({{ station }})</h3>
+
+<style>
+  ul {
+    list-style-type: none;
+    padding: 0;
+  }
+</style>
+
+<ul>
+{{#each records }}
+  <li>
+    <a href="/{{ this.place }}/on/{{ this.mmdd }}">{{ this.record_date }}</a>:  {{ this.value }}°F
+  </li>
+{{/each}}
+</ul>
+
+{{> start-end-temperature }}
+
+<div>Pick a date(mm-dd):</div>
+{{#each days }}
+<span><a href="/{{ ../placeShort }}/on/{{ this }}">{{ this }}</a></span>
+{{/each }}
+
+{{> back }}
+
+{{> attribution }}

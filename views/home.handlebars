@@ -1,0 +1,12 @@
+{{#each states }}
+<div class="state">
+  <div class="state-name">{{ this.name }}</div>
+  {{#each this.stations }}
+  <span class="station">
+    <a href="/{{ this.place }}">{{ this.station }} ({{ this.name}}, {{ this.state }})</a>
+  </span>
+  {{/each}}
+</div>
+{{/each}}
+
+{{> attribution }}
