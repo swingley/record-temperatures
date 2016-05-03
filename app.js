@@ -60,6 +60,50 @@ db.all(sqlAll, (error, rows) => {
   }));
 });
 
+// Functions to get data by station or place, with or without date.
+let stationRecords = (station, callback) => {
+  let recordsSql = `SELECT d.*, i.name, i.state
+    FROM data d, inventory i
+    WHERE d.station = i.station
+    AND d.station = '${station}'
+    AND d.rank = 1
+    AND d.record_type = 'TMAXHI'
+    ORDER BY d.value DESC
+    LIMIT 10`;
+  return db.all(recordsSql, callback);
+}
+
+let stationRecordsForDate = (station, when, callback) => {
+  let recordsSql = `SELECT d.*, i.name, i.state
+    FROM data d, inventory i
+    WHERE d.station = i.station
+    AND d.station = '${station}'
+    AND d.record_date like '${when}%'`;
+  return db.all(recordsSql, callback);
+}
+
+let placeRecords = (station, callback) => {
+  let recordsSql = `SELECT d.*, i.*
+    FROM data d, inventory i
+    WHERE d.station = i.station
+    AND d.station = '${station}'
+    AND d.rank = 1
+    AND d.record_type = 'TMAXHI'
+    ORDER BY d.value DESC
+    LIMIT 10`;
+  return db.all(recordsSql, callback);
+}
+
+let placeRecordsForDate = (station, when, callback) => {
+  let recordsSql = `SELECT d.*, i.*
+    FROM data d, inventory i
+    WHERE d.station = i.station
+    AND d.station = '${station}'
+    AND d.record_date like '${when}%'`;
+  return db.all(recordsSql, callback);
+}
+
+// Express app and routes.
 let app = express();
 app.engine('handlebars', exphbs({defaultLayout: 'main'}));
 app.set('view engine', 'handlebars');
@@ -95,16 +139,7 @@ app.get('/.txt$', (req, res) => {
 // Station abbreviations are always three upper-case letters.
 app.get('/:station([A-Z]{3}).json', (req, res) => {
   let station = req.params.station;
-  console.log('json station', station);
-  let recordsSql = `SELECT d.*, i.name
-    FROM data d, inventory i
-    WHERE d.station = i.station
-    AND d.station = '${station}'
-    AND d.rank = 1
-    AND d.record_type = 'TMAXHI'
-    ORDER BY d.value DESC
-    LIMIT 10`;
-  let records = db.all(recordsSql, (error, rows) => {
+  stationRecords(station, (error, rows) => {
     if ( error ) {
       sqliteError(error, res);
       return;
@@ -124,15 +159,7 @@ app.get('/:station([A-Z]{3}).json', (req, res) => {
 
 app.get('/:station([A-Z]{3})', (req, res) => {
   let station = req.params.station;
-  let recordsSql = `SELECT d.*, i.name, i.state
-    FROM data d, inventory i
-    WHERE d.station = i.station
-    AND d.station = '${station}'
-    AND d.rank = 1
-    AND d.record_type = 'TMAXHI'
-    ORDER BY d.value DESC
-    LIMIT 10`;
-  let records = db.all(recordsSql, (error, rows) => {
+  stationRecords(station, (error, rows) => {
     if ( error ) {
       sqliteError(error, res);
       return;
@@ -156,12 +183,7 @@ app.get('/:station([A-Z]{3})', (req, res) => {
 app.get('/:station([A-Z]{3})/on/:when.json', (req, res) => {
   let station = req.params.station;
   let when = req.params.when;
-  let recordsSql = `SELECT d.*, i.name, i.state
-    FROM data d, inventory i
-    WHERE d.station = i.station
-    AND d.station = '${station}'
-    AND d.record_date like '%${when}%'`;
-  let records = db.all(recordsSql, (error, rows) => {
+  stationRecordsForDate(station, when, (error, rows) => {
     if ( error ) {
       sqliteError(error, res);
       return;
@@ -182,12 +204,7 @@ app.get('/:station([A-Z]{3})/on/:when.json', (req, res) => {
 app.get('/:station([A-Z]{3})/on/:when', (req, res) => {
   let station = req.params.station;
   let when = req.params.when;
-  let recordsSql = `SELECT d.*, i.name, i.state, i.place
-    FROM data d, inventory i
-    WHERE d.station = i.station
-    AND d.station = '${station}'
-    AND d.record_date like '%${when}%'`;
-  let records = db.all(recordsSql, (error, rows) => {
+  stationRecordsForDate(station, when, (error, rows) => {
     if ( error ) {
       sqliteError(error, res);
       return;
@@ -210,15 +227,7 @@ app.get('/:station([A-Z]{3})/on/:when', (req, res) => {
 app.get('/:place', (req, res) => {
   let place = req.params.place;
   let station = stationLookup[place];
-  let recordsSql = `SELECT d.*, i.*
-    FROM data d, inventory i
-    WHERE d.station = i.station
-    AND d.station = '${station}'
-    AND d.rank = 1
-    AND d.record_type = 'TMAXHI'
-    ORDER BY d.value DESC
-    LIMIT 10`;
-  db.all(recordsSql, (error, rows) => {
+  placeRecords(station, (error, rows) => {
     if ( error ) {
       sqliteError(error, res);
       return;
@@ -230,7 +239,6 @@ app.get('/:place', (req, res) => {
     }
     rows.forEach(row => row.mmdd = row.record_date.slice(0, 5));
 
-    console.log('station render, place is?', place);
     res.render('station', {
       station: station,
       records: rows,
@@ -247,12 +255,7 @@ app.get('/:place/on/:when', (req, res) => {
   let place = req.params.place;
   let station = stationLookup[place];
   let when = req.params.when;
-  let recordsSql = `SELECT d.*, i.*
-    FROM data d, inventory i
-    WHERE d.station = i.station
-    AND d.station = '${station}'
-    AND d.record_date like '${when}%'`;
-  let records = db.all(recordsSql, (error, rows) => {
+  placeRecordsForDate(station, when, (error, rows) => {
     if ( error ) {
       sqliteError(error, res);
       return;
