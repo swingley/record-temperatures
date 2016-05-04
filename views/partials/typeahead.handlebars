@@ -1,0 +1,52 @@
+<script src='//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js'></script>
+<script src='//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.bundle.min.js'></script>
+<script>
+  // TODO:  use prefetch? https://twitter.github.io/typeahead.js/examples/#prefetch
+  // instead of $.get().
+  $.get('/.json').then(function(results) {
+    console.log('results', results);
+    $('.search-container input').typeahead({
+      minLength: 1,
+      highlight: true,
+      hint: false
+    }, {
+      name: 'weather-stations',
+      display: formatPlace,
+      limit: 10,
+      source: stationMatcher(results),
+      templates: {
+        header: '',
+        suggestion: function(item) {
+          return '<p>' + formatPlace(item) + '</p>';
+        }
+      }
+    }).on('typeahead:selected', function (obj, datum) {
+      console.log('typeahead:selected', obj, datum);
+      window.location = '/' + datum.place;
+    });
+  });
+
+  var stationMatcher = function(items) {
+    return function findMatches(q, cb) {
+      var matches, substringRegex;
+      // an array that will be populated with substring matches
+      matches = [];
+      // regex used to determine if a string contains the substring `q`
+      substringRegex = new RegExp(q, 'i');
+      // iterate through the pool of strings and for any string that
+      // contains the substring `q`, add it to the `matches` array
+      $.each(items, function(i, item) {
+        var full = [item.name, item.place, item.state_abbr, item.station].join('-');
+        if ( substringRegex.test(full) ) {
+          matches.push(item);
+        }
+      });
+
+      cb(matches);
+    };
+  };
+
+  var formatPlace = function(item) {
+    return item.name + ', ' + item.state + ' (' + item.station + ')';
+  }
+</script>
