@@ -4,7 +4,7 @@ const express = require('express');
 const exphbs  = require('express-handlebars');
 const sqlite3 = require('sqlite3').verbose();
 const Table = require('easy-table');
-const days = require('../month-day-strings');
+const months = require('./months');
 
 // Get all the station info.
 // Record data is queried on a per-request basis.
@@ -246,7 +246,7 @@ app.get('/:place', (req, res) => {
       placeShort: place,
       tempStart: `${rows[0].temp_year_start}`,
       tempEnd: `${rows[0].temp_year_end}`,
-      days: days
+      months: months
     });
   });
 });
@@ -266,6 +266,10 @@ app.get('/:place/on/:when', (req, res) => {
       return;
     }
 
+    // Pull out the year for each record.
+    rows.forEach(r => r.year = r.record_date.slice(6));
+
+    // Group records by type.
     let maxHighs = rows.filter(r => r.record_type === 'TMAXHI');
     let minHighs = rows.filter(r => r.record_type === 'TMAXLO');
     let minLows = rows.filter(r => r.record_type === 'TMINLO');

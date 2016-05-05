@@ -5,6 +5,9 @@
     list-style-type: none;
     padding: 0;
   }
+  div.month {
+    padding: 0.5em 0;
+  }
 </style>
 
 <ul>
@@ -17,10 +20,15 @@
 
 {{> start-end-temperature }}
 
-<div>Pick a date(mm-dd):</div>
-{{#each days }}
-<span><a href="/{{ ../placeShort }}/on/{{ this }}">{{ this }}</a></span>
-{{/each }}
+<div>Pick a date(mm-dd) to see records on that date:</div>
+  {{#each months }}
+  <div class="month">
+    {{#each this }}
+    <span><a href="/{{ ../../placeShort }}/on/{{ this }}">{{ this }}</a></span>
+    {{/each }}
+  </div>
+  {{/each }}
+
 
 {{> back }}
 
