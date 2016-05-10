@@ -8,7 +8,7 @@ const months = require('./months');
 
 // Get all the station info.
 // Record data is queried on a per-request basis.
-const db = new sqlite3.Database('../db/threadex-records.db');
+const db = new sqlite3.Database('./db/threadex-records.db');
 let port = 3003;
 let stationsByState, allStations;
 let stationLookup = {};
