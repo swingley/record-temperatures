@@ -119,6 +119,27 @@ app.get('/.json$', (req, res) => {
   res.end(stations);
 });
 
+app.get('/.geojson$', (req, res) => {
+  let features = allStations.map(station => {
+    return {
+      "type": "Feature",
+      "properties": station,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [ station.longitude, station.latitude ]
+      }
+    }
+  });
+  let collection = {
+    "type": "FeatureCollection",
+    "features": features
+  };
+  let stations = JSON.stringify(collection);
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Content-Length', Buffer.byteLength(stations));
+  res.end(stations);
+});
+
 app.get('/.txt$', (req, res) => {
   let t = new Table;
   allStations.forEach(row => {
@@ -127,6 +148,8 @@ app.get('/.txt$', (req, res) => {
     t.cell('State', row.state);
     t.cell('Start', row.temp_year_start);
     t.cell('End', row.temp_year_end);
+    t.cell('Latitude', row.latitude);
+    t.cell('Longitude', row.longitude);
     t.cell('rowid', row.rowid);
     t.newRow();
   });
