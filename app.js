@@ -159,6 +159,10 @@ app.get('/.txt$', (req, res) => {
   res.end(stations);
 });
 
+app.get('/map', (req, res) => {
+  res.render('map', { layout: false });
+});
+
 // Station abbreviations are always three upper-case letters.
 app.get('/:station([A-Z]{3}).json', (req, res) => {
   let station = req.params.station;

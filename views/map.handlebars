@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title></title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.18.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.18.0/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+    </style>
+</head>
+<body>
+
+<div id='map'></div>
+
+<script src='//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js'></script>
+<script>
+
+  //
+  // Various mapbox gl js samples stitched together...
+  //
+
+  mapboxgl.accessToken = 'pk.eyJ1Ijoic3dpbmdsZXkiLCJhIjoiampVaXBkYyJ9.x-w2I-NHC9yZxEH163o81g';
+  var app = {};
+
+  app.displayStations = function(geojson) {
+    app.map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/streets-v8',
+      center: [-96, 37.8],
+      zoom: 3
+    });
+
+    app.map.on('load', function() {
+      var layerNames = ['non-cluster-markers'];
+      app.map.addSource("markers", {
+        "type": "geojson",
+        "data": geojson,
+        "cluster": true,
+        "clusterMaxZoom": 14, // Max zoom to cluster points on
+        "clusterRadius": 50 // Radius of each cluster when clustering points (defaults to 50
+      });
+
+      // Non-clustered makers.
+      app.map.addLayer({
+        "id": "non-cluster-markers",
+        "type": "symbol",
+        "source": "markers",
+        "layout": {
+          "icon-image": "marker-15"
+        }
+      });
+
+      // Each range gets a different fill color.
+      var layers = [
+        [30, '#f28cb1'],
+        [10, '#f1f075'],
+        [0, '#51bbd6']
+      ];
+
+      layers.forEach(function(layer, i) {
+        var id = 'cluster-' + i;
+        layerNames.push(id);
+        app.map.addLayer({
+          "id": id,
+          "type": "circle",
+          "source": "markers",
+          "paint": {
+            "circle-color": layer[1],
+            "circle-radius": 18
+          },
+          "filter": i == 0 ?
+            [">=", "point_count", layer[0]] : ["all", [">=", "point_count", layer[0]],
+              ["<", "point_count", layers[i - 1][0]]
+            ]
+        });
+      });
+
+      // Add a layer for the clusters' count labels
+      layerNames.push('cluster-count');
+      app.map.addLayer({
+        "id": layerNames[layerNames.length - 1],
+        "type": "symbol",
+        "source": "markers",
+        "layout": {
+          "text-field": "{point_count}",
+          "text-font": [
+            "DIN Offc Pro Medium",
+            "Arial Unicode MS Bold"
+          ],
+          "text-size": 12
+        }
+      });
+
+      // When a click event occurs near a marker icon, open a popup at the location of
+      // the feature, with description HTML from its properties.
+      var queryLayers = {
+        // Ignore the cluster-count layer.
+        layers: layerNames.filter(function(n) { return n.indexOf('count') === -1; })
+      };
+      app.map.on('click', function(e) {
+        // var features = map.queryRenderedFeatures(e.point, { layers: ['markers'] });
+        // var features = map.queryRenderedFeatures(e.point, { layers: layerNames });
+        var features = app.map.queryRenderedFeatures(e.point, queryLayers);
+
+        if (!features.length) {
+          return;
+        }
+
+        var feature = features[0];
+        console.log('click', e.lngLat, feature.geometry.coordinates);
+
+        // Populate the popup and set its coordinates
+        // based on the feature found.
+        var popup = new mapboxgl.Popup()
+          // .setLngLat(feature.geometry.coordinates)
+          .setLngLat(e.lngLat)
+          .setHTML(getContent(feature))
+          .addTo(app.map);
+      });
+
+      function getContent(feature) {
+        var content;
+        if ( feature.properties.cluster ) {
+          content = feature.properties.point_count + ' stations. Zoom in for more info.';
+        } else {
+          var n = feature.properties.name;
+          var p = feature.properties.place;
+          content = '<a href="/' + p + '">' + n + '</a>';
+        }
+        return content;
+      }
+
+      // Use the same approach as above to indicate that the symbols are clickable
+      // by changing the cursor style to 'pointer'.
+      app.map.on('mousemove', function(e) {
+        var features = app.map.queryRenderedFeatures(e.point, queryLayers);
+        app.map.getCanvas().style.cursor = (features.length) ? 'pointer' : '';
+      });
+    });
+  }
+
+  $.getJSON('/.geojson').then(
+    app.displayStations,
+    function(error) {
+      console.log('Error getting stations as geojson.', error);
+    }
+  );
+</script>
+
+</body>
+</html>
