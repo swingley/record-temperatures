@@ -233,7 +233,7 @@ app.get('/:place/on/:when', (req, res) => {
 
     // Group records by type.
     let maxHighs = rows.filter(r => r.record_type === 'TMAXHI');
-    let minHighs = rows.filter(r => r.record_type === 'TMAXLO');
+    let minHighs = rows.filter(r => r.record_type === 'TMINHI');
     let minLows = rows.filter(r => r.record_type === 'TMINLO');
     let maxLows = rows.filter(r => r.record_type === 'TMAXLO');
     let precip = rows.filter(r => r.record_type === 'PRCPHI');
