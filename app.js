@@ -5,6 +5,7 @@ const exphbs  = require('express-handlebars');
 const sqlite3 = require('sqlite3').verbose();
 const Table = require('easy-table');
 const months = require('./months');
+const queries = require('./queries');
 
 // Get all the station info.
 // Record data is queried on a per-request basis.
@@ -12,7 +13,7 @@ const db = new sqlite3.Database('./db/threadex-records.db');
 let port = 3003;
 let stationsByState, allStations;
 let stationLookup = {};
-let sqlAll = 'SELECT *, rowid FROM inventory ORDER BY station'
+let sqlAll = 'SELECT *, rowid FROM inventory ORDER BY station';
 
 let sqliteError = (error, res) => {
   console.log('sqlite error', error);
@@ -62,45 +63,25 @@ db.all(sqlAll, (error, rows) => {
 
 // Functions to get data by station or place, with or without date.
 let stationRecords = (station, callback) => {
-  let recordsSql = `SELECT d.*, i.name, i.state
-    FROM data d, inventory i
-    WHERE d.station = i.station
-    AND d.station = '${station}'
-    AND d.rank = 1
-    AND d.record_type = 'TMAXHI'
-    ORDER BY d.value DESC
-    LIMIT 10`;
-  return db.all(recordsSql, callback);
+  let recordsSql = queries.stationRecords;
+  return db.all(recordsSql, station, callback);
 }
 
 let stationRecordsForDate = (station, when, callback) => {
-  let recordsSql = `SELECT d.*, i.name, i.state
-    FROM data d, inventory i
-    WHERE d.station = i.station
-    AND d.station = '${station}'
-    AND d.record_date like '${when}%'`;
-  return db.all(recordsSql, callback);
+  when = when + '%';
+  let recordsSql = queries.stationRecordsForDate;
+  return db.all(recordsSql, station, when, callback);
 }
 
 let placeRecords = (station, callback) => {
-  let recordsSql = `SELECT d.*, i.*
-    FROM data d, inventory i
-    WHERE d.station = i.station
-    AND d.station = '${station}'
-    AND d.rank = 1
-    AND d.record_type = 'TMAXHI'
-    ORDER BY d.value DESC
-    LIMIT 10`;
-  return db.all(recordsSql, callback);
+  let recordsSql = queries.placeRecords;
+  return db.all(recordsSql, station, callback);
 }
 
 let placeRecordsForDate = (station, when, callback) => {
-  let recordsSql = `SELECT d.*, i.*
-    FROM data d, inventory i
-    WHERE d.station = i.station
-    AND d.station = '${station}'
-    AND d.record_date like '${when}%'`;
-  return db.all(recordsSql, callback);
+  when = when + '%';
+  let recordsSql = queries.placeRecordsForDate;
+  return db.all(recordsSql, station, when, callback);
 }
 
 // Express app and routes.
@@ -184,29 +165,6 @@ app.get('/:station([A-Z]{3}).json', (req, res) => {
   });
 });
 
-app.get('/:station([A-Z]{3})', (req, res) => {
-  let station = req.params.station;
-  stationRecords(station, (error, rows) => {
-    if ( error ) {
-      sqliteError(error, res);
-      return;
-    }
-
-    if ( rows.length === 0 ) {
-      res.end(`Couldn't find any records for ${station}.`);
-      return;
-    }
-
-    rows.forEach(row => row.mmdd = row.record_date.slice(0, 5));
-
-    res.render('station', {
-      station: station,
-      records: rows,
-      place: `${rows[0].name}, ${rows[0].state}`
-    });
-  });
-});
-
 app.get('/:station([A-Z]{3})/on/:when.json', (req, res) => {
   let station = req.params.station;
   let when = req.params.when;
@@ -225,29 +183,6 @@ app.get('/:station([A-Z]{3})/on/:when.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Length', Buffer.byteLength(records));
     res.end(records);
-  });
-});
-
-app.get('/:station([A-Z]{3})/on/:when', (req, res) => {
-  let station = req.params.station;
-  let when = req.params.when;
-  stationRecordsForDate(station, when, (error, rows) => {
-    if ( error ) {
-      sqliteError(error, res);
-      return;
-    }
-
-    if ( rows.length === 0 ) {
-      res.end(`Couldn't find any records on ${when}.`);
-      return;
-    }
-
-    res.render('station-day', {
-      station: station,
-      place: `${rows[0].place}`,
-      when: when,
-      records: rows
-    });
   });
 });
 
