@@ -1,11 +1,13 @@
 {{> search }}
 
+{{> view-options }}
+
 {{#each states }}
 <div class="state">
-  <div class="state-name">{{ this.name }}</div>
-  {{#each this.stations }}
+  <div class="state-name">{{ name }}</div>
+  {{#each stations }}
   <span class="station">
-    <a href="/{{ this.place }}">{{ this.station }} ({{ this.name}}, {{ this.state }})</a>
+    <a href="/{{ this.place }}">{{ station }} ({{ name}}, {{ state }})</a>
   </span>
   {{/each}}
 </div>
