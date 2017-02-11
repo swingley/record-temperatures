@@ -4,8 +4,8 @@
     <meta charset='utf-8' />
     <title></title>
     <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
-    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.18.0/mapbox-gl.js'></script>
-    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.18.0/mapbox-gl.css' rel='stylesheet' />
+    <script src='//api.mapbox.com/mapbox-gl-js/v0.32.1/mapbox-gl.js'></script>
+    <link href='//api.mapbox.com/mapbox-gl-js/v0.32.1/mapbox-gl.css' rel='stylesheet' />
     <style>
         body { margin:0; padding:0; }
         #map { position:absolute; top:0; bottom:0; width:100%; }
@@ -15,7 +15,6 @@
 
 <div id='map'></div>
 
-<script src='//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js'></script>
 <script>
 
   //
@@ -25,7 +24,8 @@
   mapboxgl.accessToken = 'pk.eyJ1Ijoic3dpbmdsZXkiLCJhIjoiampVaXBkYyJ9.x-w2I-NHC9yZxEH163o81g';
   var app = {};
 
-  app.displayStations = function(geojson) {
+  app.displayStations = function(e) {
+    var geojson = JSON.parse(e.target.response);
     app.map = new mapboxgl.Map({
       container: 'map',
       style: 'mapbox://styles/mapbox/streets-v8',
@@ -100,17 +100,23 @@
         // Ignore the cluster-count layer.
         layers: layerNames.filter(function(n) { return n.indexOf('count') === -1; })
       };
+      console.log('queryLayers', queryLayers)
       app.map.on('click', function(e) {
         // var features = map.queryRenderedFeatures(e.point, { layers: ['markers'] });
         // var features = map.queryRenderedFeatures(e.point, { layers: layerNames });
         var features = app.map.queryRenderedFeatures(e.point, queryLayers);
+        // console.log('features', features);
+        // var sourceFeatures = app.map.querySourceFeatures('markers', {
+        //   filter: ['>=', 'rowid', 0]
+        // });
+        // console.log('sourceFeatures', sourceFeatures);
 
         if (!features.length) {
           return;
         }
 
         var feature = features[0];
-        console.log('click', e.lngLat, feature.geometry.coordinates);
+        // console.log('click', e.lngLat, feature.geometry.coordinates);
 
         // Populate the popup and set its coordinates
         // based on the feature found.
@@ -142,12 +148,11 @@
     });
   }
 
-  $.getJSON('/.geojson').then(
-    app.displayStations,
-    function(error) {
-      console.log('Error getting stations as geojson.', error);
-    }
-  );
+  var xhr = new XMLHttpRequest();
+  xhr.addEventListener('load', app.displayStations);
+  xhr.open('get', '/.geojson');
+  xhr.send();
+
 </script>
 
 </body>
