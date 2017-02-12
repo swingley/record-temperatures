@@ -9,6 +9,9 @@
     display: inline-block;
     width: 49%;
   }
+  .monthly {
+    padding: 10px 0;
+  }
 </style>
 
 <div class="records">
@@ -55,13 +58,13 @@
   </ul>
 </div>
 
-<div class="records">
+<div class="records monthly">
   Highest {{ monthlyRecordHigh.mon }} temperature:
   <br>
   {{ monthlyRecordHigh.value }}°F on {{ monthlyRecordHigh.record_date }}.
 </div>
 
-<div class="records">
+<div class="records monthly">
   Lowest {{ monthlyRecordLow.mon }} temperature:
   <br>
   {{ monthlyRecordLow.value }}°F on {{ monthlyRecordLow.record_date }}.
