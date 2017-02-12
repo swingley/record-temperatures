@@ -2,6 +2,7 @@
 
 const express = require('express');
 const exphbs  = require('express-handlebars');
+const favicon = require('serve-favicon');
 const sqlite3 = require('sqlite3').verbose();
 const Table = require('easy-table');
 const months = require('./months');
@@ -86,6 +87,7 @@ let placeRecordsForDate = (station, when, callback) => {
 
 // Express app and routes.
 let app = express();
+app.use(favicon(__dirname + '/favicon.png'));
 app.engine('handlebars', exphbs({defaultLayout: 'main'}));
 app.set('view engine', 'handlebars');
 
