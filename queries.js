@@ -27,7 +27,17 @@ let queries = {
     'FROM data d, inventory i ' +
     'WHERE d.station = i.station ' +
     'AND d.station = ? ' +
-    'AND d.record_date like ?'
+    'AND d.record_date like ?',
+  placeMonthlyHigh: 'SELECT MAX(value) AS value, record_date ' +
+    'FROM data ' +
+    'WHERE record_type = \'TMAXHI\' ' +
+    'AND station = ? ' +
+    'AND SUBSTR(record_date, 0, 3) = ?',
+  placeMonthlyLow: 'SELECT MIN(value) AS value, record_date ' +
+    'FROM data ' +
+    'WHERE record_type = \'TMINLO\' ' +
+    'AND station = ? ' +
+    'AND SUBSTR(record_date, 0, 3) = ?'
 }
 
 module.exports = queries;

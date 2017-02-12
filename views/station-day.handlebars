@@ -55,6 +55,18 @@
   </ul>
 </div>
 
+<div class="records">
+  Highest {{ monthlyRecordHigh.mon }} temperature:
+  <br>
+  {{ monthlyRecordHigh.value }}°F on {{ monthlyRecordHigh.record_date }}.
+</div>
+
+<div class="records">
+  Lowest {{ monthlyRecordLow.mon }} temperature:
+  <br>
+  {{ monthlyRecordLow.value }}°F on {{ monthlyRecordLow.record_date }}.
+</div>
+
 {{> start-end-temperature }}
 
 <hr>

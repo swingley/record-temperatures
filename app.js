@@ -5,8 +5,11 @@ const exphbs  = require('express-handlebars');
 const favicon = require('serve-favicon');
 const sqlite3 = require('sqlite3').verbose();
 const Table = require('easy-table');
+const moment = require('moment');
 const months = require('./months');
 const queries = require('./queries');
+
+const monthNames = moment.months();
 
 // Get all the station info.
 // Record data is queried on a per-request basis.
@@ -83,6 +86,16 @@ let placeRecordsForDate = (station, when, callback) => {
   when = when + '%';
   let recordsSql = queries.placeRecordsForDate;
   return db.all(recordsSql, station, when, callback);
+}
+
+let placeMonthlyRecordHigh = (station, month, callback) => {
+  let recordsSql = queries.placeMonthlyHigh;
+  return db.all(recordsSql, station, month, callback);
+}
+
+let placeMonthlyRecordLow = (station, month, callback) => {
+  let recordsSql = queries.placeMonthlyLow;
+  return db.all(recordsSql, station, month, callback);
 }
 
 // Express app and routes.
@@ -219,6 +232,7 @@ app.get('/:place/on/:when', (req, res) => {
   let place = req.params.place;
   let station = stationLookup[place];
   let when = req.params.when;
+  let month = when.split('-')[0];
   placeRecordsForDate(station, when, (error, rows) => {
     if ( error ) {
       sqliteError(error, res);
@@ -230,31 +244,48 @@ app.get('/:place/on/:when', (req, res) => {
       return;
     }
 
-    // Pull out the year for each record.
-    rows.forEach(r => r.year = r.record_date.slice(6));
+    placeMonthlyRecordHigh(station, month, (error, recordHigh) => {
+      if ( error ) {
+        sqliteError(error, res);
+      }
 
-    // Group records by type.
-    let maxHighs = rows.filter(r => r.record_type === 'TMAXHI');
-    let minHighs = rows.filter(r => r.record_type === 'TMINHI');
-    let minLows = rows.filter(r => r.record_type === 'TMINLO');
-    let maxLows = rows.filter(r => r.record_type === 'TMAXLO');
-    let precip = rows.filter(r => r.record_type === 'PRCPHI')
-    precip.forEach(r => r.value = (r.value / 100).toFixed(2) + '"');
+      placeMonthlyRecordLow(station, month, (error, recordLow) => {
+        if ( error ) {
+          sqliteError(error, res);
+        }
 
-    res.render('station-day', {
-      station: station,
-      place: `${rows[0].name}, ${rows[0].state}`,
-      when: when,
-      records: rows,
-      maxHighs: maxHighs,
-      minHighs: minHighs,
-      minLows: minLows,
-      maxLows: maxLows,
-      tempStart: `${rows[0].temp_year_start}`,
-      tempEnd: `${rows[0].temp_year_end}`,
-      precip: precip,
-      precipStart: `${rows[0].precip_year_start}`,
-      precipEnd: `${rows[0].precip_year_end}`
+        let monthNumber = parseInt(month) - 1;
+        recordLow[0].mon = monthNames[monthNumber];
+        recordHigh[0].mon = monthNames[monthNumber];
+        // Pull out the year for each record.
+        rows.forEach(r => r.year = r.record_date.slice(6));
+
+        // Group records by type.
+        let maxHighs = rows.filter(r => r.record_type === 'TMAXHI');
+        let minHighs = rows.filter(r => r.record_type === 'TMINHI');
+        let minLows = rows.filter(r => r.record_type === 'TMINLO');
+        let maxLows = rows.filter(r => r.record_type === 'TMAXLO');
+        let precip = rows.filter(r => r.record_type === 'PRCPHI')
+        precip.forEach(r => r.value = (r.value / 100).toFixed(2) + '"');
+
+        res.render('station-day', {
+          station: station,
+          place: `${rows[0].name}, ${rows[0].state}`,
+          when: when,
+          records: rows,
+          maxHighs: maxHighs,
+          minHighs: minHighs,
+          minLows: minLows,
+          maxLows: maxLows,
+          monthlyRecordHigh: recordHigh[0],
+          monthlyRecordLow: recordLow[0],
+          tempStart: `${rows[0].temp_year_start}`,
+          tempEnd: `${rows[0].temp_year_end}`,
+          precip: precip,
+          precipStart: `${rows[0].precip_year_start}`,
+          precipEnd: `${rows[0].precip_year_end}`
+        });
+      });
     });
   });
 });
