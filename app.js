@@ -238,7 +238,8 @@ app.get('/:place/on/:when', (req, res) => {
     let minHighs = rows.filter(r => r.record_type === 'TMINHI');
     let minLows = rows.filter(r => r.record_type === 'TMINLO');
     let maxLows = rows.filter(r => r.record_type === 'TMAXLO');
-    let precip = rows.filter(r => r.record_type === 'PRCPHI');
+    let precip = rows.filter(r => r.record_type === 'PRCPHI')
+    precip.forEach(r => r.value = (r.value / 100).toFixed(2) + '"');
 
     res.render('station-day', {
       station: station,
