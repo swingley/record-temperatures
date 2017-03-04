@@ -12,14 +12,15 @@ let day = 1
 let dayEnd = lastDay(month)
 
 let months = []
+const monthNames = moment.months()
 
 while ( month < 12 ) {
-  let current = [];
+  let current = { name: monthNames[month], days: [] }
   while ( day <= dayEnd ) {
-    current.push(stringDate(month, day))
+    current.days.push(stringDate(month, day))
     day += 1
   }
-  months.push(current);
+  months.push(current)
   day = 1
   month += 1
   dayEnd = lastDay(month)

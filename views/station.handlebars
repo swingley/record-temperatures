@@ -23,7 +23,8 @@
 <div>Pick a date(mm-dd) to see records on that date:</div>
   {{#each months }}
   <div class="month">
-    {{#each this }}
+    <div>{{ name }}</div>
+    {{#each days }}
     <span><a href="/{{ ../../placeShort }}/on/{{ this }}">{{ this }}</a></span>
     {{/each }}
   </div>
