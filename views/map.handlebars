@@ -9,6 +9,14 @@
     <style>
         body { margin:0; padding:0; }
         #map { position:absolute; top:0; bottom:0; width:100%; }
+        .mapboxgl-popup-content a { font-size: 2em; }
+        .record, .year, .cold, .hot { vertical-align: middle; }
+        .record, .year { text-align: center; }
+        .record { font-size: 4em; }
+        .year { font-size: 2em; }
+        .cold, .hot { display: inline-block; line-height: 1em; padding-left: 0.5em; }
+        .cold { color: #3681f9; }
+        .hot { color: #f93669; }
     </style>
 </head>
 <body>
@@ -105,7 +113,7 @@
         // var features = map.queryRenderedFeatures(e.point, { layers: ['markers'] });
         // var features = map.queryRenderedFeatures(e.point, { layers: layerNames });
         var features = app.map.queryRenderedFeatures(e.point, queryLayers);
-        // console.log('features', features);
+        // console.log('features clicked', features);
         // var sourceFeatures = app.map.querySourceFeatures('markers', {
         //   filter: ['>=', 'rowid', 0]
         // });
@@ -120,7 +128,7 @@
 
         // Populate the popup and set its coordinates
         // based on the feature found.
-        var popup = new mapboxgl.Popup()
+        app.popup = new mapboxgl.Popup()
           // .setLngLat(feature.geometry.coordinates)
           .setLngLat(e.lngLat)
           .setHTML(getContent(feature))
@@ -135,8 +143,49 @@
           var n = feature.properties.name;
           var p = feature.properties.place;
           content = '<a href="/' + p + '">' + n + '</a>';
+          var today = new Date();
+          var month = today.getMonth();
+          var day = today.getDate();
+          // Month is zero-indexed, add one.
+          var mmdd = pad(month + 1) + '-' + pad(day);
+          var apiUrl = '/' + feature.properties.station + '/on/' + mmdd + '.json';
+          getRecords(apiUrl, mmdd)
         }
         return content;
+      }
+
+      function pad(val) {
+        if ( val < 10 ) {
+          val = '0' + val;
+        } else {
+          val = '' + val;
+        }
+        return val;
+      }
+
+      function getRecords(apiUrl, mmdd) {
+        var xhr = new XMLHttpRequest();
+        xhr.addEventListener('load', function(e) {
+          var records = JSON.parse(e.target.response);
+          var extremes = records.filter(function(r) {
+            return r.rank === 1 && (r.record_type === 'TMINLO' || r.record_type === 'TMAXHI');
+          });
+          var display = extremes.map(function(r) {
+            if ( r.record_type === 'TMINLO' ) {
+              return '<div><span class="year">' + r.record_date.split('-')[2] + ':</span>' + 
+                '<span class="record cold">' + r.value + '°</span></div>';
+            }
+            if ( r.record_type === 'TMAXHI' ) {
+              return '<div><span class="year">' + r.record_date.split('-')[2] + ':</span>' + 
+                '<span class="record hot">' + r.value + '°</span></div>';
+            }
+          });
+          var recs = document.createElement('div');
+          recs.innerHTML = '<div>Today\'s records:</div>' + display.join('');
+          app.popup._content.prepend(recs);
+        });
+        xhr.open('get', apiUrl);
+        xhr.send();
       }
 
       // Use the same approach as above to indicate that the symbols are clickable
