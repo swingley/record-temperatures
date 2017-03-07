@@ -10,18 +10,19 @@
         * { box-sizing: border-box; }
         body { margin:0; padding:0; color: #636363; }
         #map { position:absolute; top:0; bottom:0; width:100%; }
-        .mapboxgl-popup-content { min-width: 270px; text-align: center; }
+        .mapboxgl-popup-content { min-width: 200px; text-align: center; }
         .mapboxgl-popup-content a { color: #636363; font-size: 2em; }
         .mapboxgl-popup-content div span.year,
         .mapboxgl-popup-content div span.record { 
-          display: inline-block; width: 50%; 
+          display: inline-block; 
         }
-        .mapboxgl-popup-content div span.record { text-align: right; }
+        .mapboxgl-popup-content div span.year { width: 40%; }
+        .mapboxgl-popup-content div span.record { text-align: right; width: 60%;}
         .record, .year, .cold, .hot { vertical-align: middle; }
         .record, .year { text-align: center; }
         .record { font-size: 4em; }
         .year { font-size: 2em; text-align: left; }
-        .cold, .hot { display: inline-block; line-height: 1em; padding-left: 0.5em; }
+        .cold, .hot { display: inline-block; line-height: 1em; }
         .cold { color: #4da1f5; }
         .hot { color: #ea4752; }
         .fahrenheit { font-size: 40%; vertical-align: text-top; margin-top: -5px; display: inline-block; color: #909090; }
