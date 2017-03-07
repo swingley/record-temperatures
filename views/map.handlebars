@@ -7,16 +7,24 @@
     <script src='//api.mapbox.com/mapbox-gl-js/v0.32.1/mapbox-gl.js'></script>
     <link href='//api.mapbox.com/mapbox-gl-js/v0.32.1/mapbox-gl.css' rel='stylesheet' />
     <style>
-        body { margin:0; padding:0; }
+        * { box-sizing: border-box; }
+        body { margin:0; padding:0; color: #636363; }
         #map { position:absolute; top:0; bottom:0; width:100%; }
-        .mapboxgl-popup-content a { font-size: 2em; }
+        .mapboxgl-popup-content { min-width: 270px; text-align: center; }
+        .mapboxgl-popup-content a { color: #636363; font-size: 2em; }
+        .mapboxgl-popup-content div span.year,
+        .mapboxgl-popup-content div span.record { 
+          display: inline-block; width: 50%; 
+        }
+        .mapboxgl-popup-content div span.record { text-align: right; }
         .record, .year, .cold, .hot { vertical-align: middle; }
         .record, .year { text-align: center; }
         .record { font-size: 4em; }
-        .year { font-size: 2em; }
+        .year { font-size: 2em; text-align: left; }
         .cold, .hot { display: inline-block; line-height: 1em; padding-left: 0.5em; }
-        .cold { color: #3681f9; }
-        .hot { color: #f93669; }
+        .cold { color: #4da1f5; }
+        .hot { color: #ea4752; }
+        .fahrenheit { font-size: 40%; vertical-align: text-top; margin-top: -5px; display: inline-block; color: #909090; }
     </style>
 </head>
 <body>
@@ -173,15 +181,15 @@
           var display = extremes.map(function(r) {
             if ( r.record_type === 'TMINLO' ) {
               return '<div><span class="year">' + r.record_date.split('-')[2] + ':</span>' + 
-                '<span class="record cold">' + r.value + '°</span></div>';
+                '<span class="record cold">' + r.value + '<span class="fahrenheit">°F</span></span></div>';
             }
             if ( r.record_type === 'TMAXHI' ) {
               return '<div><span class="year">' + r.record_date.split('-')[2] + ':</span>' + 
-                '<span class="record hot">' + r.value + '°</span></div>';
+                '<span class="record hot">' + r.value + '<span class="fahrenheit">°F</span></span></div>';
             }
           });
           var recs = document.createElement('div');
-          recs.innerHTML = '<div>Today\'s records:</div>' + display.join('');
+          recs.innerHTML = '<div>Today\'s records</div>' + display.join('');
           app.popup._content.prepend(recs);
         });
         xhr.open('get', apiUrl);
