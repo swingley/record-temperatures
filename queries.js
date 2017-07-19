@@ -37,7 +37,11 @@ let queries = {
     'FROM data ' +
     'WHERE record_type = \'TMINLO\' ' +
     'AND station = ? ' +
-    'AND SUBSTR(record_date, 0, 3) = ?'
+    'AND SUBSTR(record_date, 0, 3) = ?',
+  stationNormalsForDate: 'SELECT value, record_type ' +
+    'FROM data ' +
+    'WHERE station = ? ' +
+    'AND record_date = ?'
 }
 
 module.exports = queries;

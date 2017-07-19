@@ -14,6 +14,7 @@ const monthNames = moment.months();
 // Get all the station info.
 // Record data is queried on a per-request basis.
 const db = new sqlite3.Database('./db/threadex-records.db');
+const normals = new sqlite3.Database('./db/ncdc-normals-for-threadex-stations.db');
 let port = 3003;
 let stationsByState, allStations;
 let stationLookup = {};
@@ -75,6 +76,12 @@ let stationRecordsForDate = (station, when, callback) => {
   when = when + '%';
   let recordsSql = queries.stationRecordsForDate;
   return db.all(recordsSql, station, when, callback);
+}
+
+let stationNormalsForDate = (station, when, callback) => {
+  let normalsSql = queries.stationNormalsForDate;
+  console.log('normalsSql', normalsSql, station, when);
+  return normals.all(normalsSql, station, when, callback);
 }
 
 let placeRecords = (station, callback) => {
@@ -233,6 +240,16 @@ app.get('/:place/on/:when', (req, res) => {
   let station = stationLookup[place];
   let when = req.params.when;
   let month = when.split('-')[0];
+
+  let queryCount = 4;
+  let queriesCompleted = 0;
+  let queryResults = {}
+  let queryCheck = () => {
+    if ( queriesCompleted === queryCount ) {
+      renderPage();
+    }
+  }
+
   placeRecordsForDate(station, when, (error, rows) => {
     if ( error ) {
       sqliteError(error, res);
@@ -243,51 +260,82 @@ app.get('/:place/on/:when', (req, res) => {
       res.end(`Couldn't find any records on ${when}.`);
       return;
     }
+    queryResults.daily = rows;
+    queriesCompleted += 1;
+    queryCheck()
+  })
 
-    placeMonthlyRecordHigh(station, month, (error, recordHigh) => {
-      if ( error ) {
-        sqliteError(error, res);
-      }
+  placeMonthlyRecordHigh(station, month, (error, recordHigh) => {
+    if ( error ) {
+      sqliteError(error, res);
+    }
 
-      placeMonthlyRecordLow(station, month, (error, recordLow) => {
-        if ( error ) {
-          sqliteError(error, res);
-        }
+    queryResults.monthlyHigh = recordHigh;
+    queriesCompleted += 1;
+    queryCheck()
+  })
 
-        let monthNumber = parseInt(month) - 1;
-        recordLow[0].mon = monthNames[monthNumber];
-        recordHigh[0].mon = monthNames[monthNumber];
-        // Pull out the year for each record.
-        rows.forEach(r => r.year = r.record_date.slice(6));
+  placeMonthlyRecordLow(station, month, (error, recordLow) => {
+    if ( error ) {
+      sqliteError(error, res);
+    }
+    queryResults.monthlyLow = recordLow;
+    queriesCompleted += 1;
+    queryCheck()
+  })
 
-        // Group records by type.
-        let maxHighs = rows.filter(r => r.record_type === 'TMAXHI');
-        let minHighs = rows.filter(r => r.record_type === 'TMINHI');
-        let minLows = rows.filter(r => r.record_type === 'TMINLO');
-        let maxLows = rows.filter(r => r.record_type === 'TMAXLO');
-        let precip = rows.filter(r => r.record_type === 'PRCPHI')
-        precip.forEach(r => r.value = (r.value / 100).toFixed(2) + '"');
+  stationNormalsForDate(station, when, (error, normals) => {
+    if ( error ) {
+      sqliteError(error, res);
+    }
+    queryResults.normals = normals;
+    queriesCompleted += 1;
+    queryCheck()
+  })
 
-        res.render('station-day', {
-          station: station,
-          place: `${rows[0].name}, ${rows[0].state}`,
-          when: when,
-          records: rows,
-          maxHighs: maxHighs,
-          minHighs: minHighs,
-          minLows: minLows,
-          maxLows: maxLows,
-          monthlyRecordHigh: recordHigh[0],
-          monthlyRecordLow: recordLow[0],
-          tempStart: `${rows[0].temp_year_start}`,
-          tempEnd: `${rows[0].temp_year_end}`,
-          precip: precip,
-          precipStart: `${rows[0].precip_year_start}`,
-          precipEnd: `${rows[0].precip_year_end}`
-        });
-      });
+
+  let renderPage = () => {
+    console.log('renderPage, normals', queryResults.normals)
+    let monthNumber = parseInt(month) - 1;
+    queryResults.monthlyLow[0].mon = monthNames[monthNumber];
+    queryResults.monthlyHigh[0].mon = monthNames[monthNumber];
+    // Pull out the year for each record.
+    queryResults.daily.forEach(r => r.year = r.record_date.slice(6));
+
+    let { daily, normals } = queryResults;
+    // Group records by type.
+    let maxHighs = daily.filter(r => r.record_type === 'TMAXHI');
+    let minHighs = daily.filter(r => r.record_type === 'TMINHI');
+    let minLows = daily.filter(r => r.record_type === 'TMINLO');
+    let maxLows = daily.filter(r => r.record_type === 'TMAXLO');
+    let precip = daily.filter(r => r.record_type === 'PRCPHI')
+    precip.forEach(r => r.value = (r.value / 100).toFixed(2) + '"');
+
+    let avgHigh = normals.filter(n => n.record_type === 'normal_max')[0].value;
+    let avgLow = normals.filter(n => n.record_type === 'normal_min')[0].value;
+    let avg = normals.filter(n => n.record_type === 'normal_avg')[0].value;
+
+    res.render('station-day', {
+      station: station,
+      place: `${daily[0].name}, ${daily[0].state}`,
+      when: when,
+      records: daily,
+      maxHighs: maxHighs,
+      minHighs: minHighs,
+      minLows: minLows,
+      maxLows: maxLows,
+      monthlyRecordHigh: queryResults.monthlyHigh[0],
+      monthlyRecordLow: queryResults.monthlyLow[0],
+      avgHigh: avgHigh,
+      avgLow: avgLow,
+      avg: avg,
+      tempStart: `${daily[0].temp_year_start}`,
+      tempEnd: `${daily[0].temp_year_end}`,
+      precip: precip,
+      precipStart: `${daily[0].precip_year_start}`,
+      precipEnd: `${daily[0].precip_year_end}`
     });
-  });
+  };
 });
 
 app.listen(port);
