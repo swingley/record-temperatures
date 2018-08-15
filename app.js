@@ -80,7 +80,7 @@ let stationRecordsForDate = (station, when, callback) => {
 
 let stationNormalsForDate = (station, when, callback) => {
   let normalsSql = queries.stationNormalsForDate;
-  console.log('normalsSql', normalsSql, station, when);
+  console.log('normalsSql', moment().format('YYYY-MM-DD--HH:mm:ss'), normalsSql, station, when);
   return normals.all(normalsSql, station, when, callback);
 }
 
@@ -295,7 +295,7 @@ app.get('/:place/on/:when', (req, res) => {
 
 
   let renderPage = () => {
-    console.log('renderPage, normals', queryResults.normals)
+    console.log('renderPage, normals', moment().format('YYYY-MM-DD--HH:mm:ss'), queryResults.normals)
     let monthNumber = parseInt(month) - 1;
     queryResults.monthlyLow[0].mon = monthNames[monthNumber];
     queryResults.monthlyHigh[0].mon = monthNames[monthNumber];
@@ -311,9 +311,24 @@ app.get('/:place/on/:when', (req, res) => {
     let precip = daily.filter(r => r.record_type === 'PRCPHI')
     precip.forEach(r => r.value = (r.value / 100).toFixed(2) + '"');
 
-    let avgHigh = normals.filter(n => n.record_type === 'normal_max')[0].value;
-    let avgLow = normals.filter(n => n.record_type === 'normal_min')[0].value;
-    let avg = normals.filter(n => n.record_type === 'normal_avg')[0].value;
+    let avgHigh = normals.filter(n => n.record_type === 'normal_max')
+    if ( avgHigh.length > 0 ){
+      avgHigh = avgHigh[0].value;
+    } else {
+      avgHigh = '--'
+    }
+    let avgLow = normals.filter(n => n.record_type === 'normal_min');
+    if ( avgLow.length > 0 ){
+      avgLow = avgLow[0].value;
+    } else {
+      avgLow = '--'
+    }
+    let avg = normals.filter(n => n.record_type === 'normal_avg');
+    if ( avg.length > 0 ){
+      avg = avg[0].value;
+    } else {
+      avg = '--'
+    }
 
     res.render('station-day', {
       station: station,
