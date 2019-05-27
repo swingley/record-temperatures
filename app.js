@@ -20,6 +20,10 @@ let stationsByState, allStations;
 let stationLookup = {};
 let sqlAll = 'SELECT *, rowid FROM inventory ORDER BY station';
 
+// ThreadEx 14 added "thr" to the end of all station identifiers
+// Strip that out
+let stripTrailingThr = name => name.replace(/thr$/, '')
+
 let sqliteError = (error, res) => {
   console.log('sqlite error', error);
   res.send(500);
@@ -38,14 +42,14 @@ db.all(sqlAll, (error, rows) => {
     if (!states.hasOwnProperty(row.state)) {
       states[row.state] = [{
         name: row.name,
-        station: row.station,
+        station: stripTrailingThr(row.station),
         state: row.state,
         place: row.place
       }];
     } else {
       states[row.state].push({
         name: row.name,
-        station: row.station,
+        station: stripTrailingThr(row.station),
         state: row.state,
         place: row.place
       });
@@ -80,6 +84,7 @@ let stationRecordsForDate = (station, when, callback) => {
 
 let stationNormalsForDate = (station, when, callback) => {
   let normalsSql = queries.stationNormalsForDate;
+  station = stripTrailingThr(station)
   console.log('normalsSql', moment().format('YYYY-MM-DD--HH:mm:ss'), normalsSql, station, when);
   return normals.all(normalsSql, station, when, callback);
 }
@@ -187,7 +192,7 @@ app.get('/:station([A-Z]{3}).json', (req, res) => {
   });
 });
 
-app.get('/:station([A-Z]{3})/on/:when.json', (req, res) => {
+app.get('/:station([A-Z]{3,8})/on/:when.json', (req, res) => {
   let station = req.params.station;
   let when = req.params.when;
   stationRecordsForDate(station, when, (error, rows) => {
