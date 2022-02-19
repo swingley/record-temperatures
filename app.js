@@ -14,7 +14,6 @@ const monthNames = moment.months();
 // Get all the station info.
 // Record data is queried on a per-request basis.
 const db = new sqlite3.Database('./db/threadex-records.db');
-const normals = new sqlite3.Database('./db/ncdc-normals-for-threadex-stations.db');
 let port = 3003;
 let stationsByState, allStations;
 let stationLookup = {};
@@ -80,13 +79,6 @@ let stationRecordsForDate = (station, when, callback) => {
   when = when + '%';
   let recordsSql = queries.stationRecordsForDate;
   return db.all(recordsSql, station, when, callback);
-}
-
-let stationNormalsForDate = (station, when, callback) => {
-  let normalsSql = queries.stationNormalsForDate;
-  station = stripTrailingThr(station)
-  console.log('normalsSql', moment().format('YYYY-MM-DD--HH:mm:ss'), normalsSql, station, when);
-  return normals.all(normalsSql, station, when, callback);
 }
 
 let placeRecords = (station, callback) => {
@@ -246,7 +238,7 @@ app.get('/:place/on/:when', (req, res) => {
   let when = req.params.when;
   let month = when.split('-')[0];
 
-  let queryCount = 4;
+  let queryCount = 3;
   let queriesCompleted = 0;
   let queryResults = {}
   let queryCheck = () => {
@@ -265,7 +257,10 @@ app.get('/:place/on/:when', (req, res) => {
       res.end(`Couldn't find any records on ${when}.`);
       return;
     }
-    queryResults.daily = rows;
+    const daily = rows.filter(row => row.source === 'threadex')
+    const normals = rows.filter(row => row.source === 'normal')
+    queryResults.daily = daily;
+    queryResults.normals = normals;
     queriesCompleted += 1;
     queryCheck()
   })
@@ -289,18 +284,9 @@ app.get('/:place/on/:when', (req, res) => {
     queryCheck()
   })
 
-  stationNormalsForDate(station, when, (error, normals) => {
-    if ( error ) {
-      sqliteError(error, res);
-    }
-    queryResults.normals = normals;
-    queriesCompleted += 1;
-    queryCheck()
-  })
-
-
   let renderPage = () => {
-    console.log('renderPage, normals', moment().format('YYYY-MM-DD--HH:mm:ss'), queryResults.normals)
+    // console.log('renderPage, normals', moment().format('YYYY-MM-DD--HH:mm:ss'), queryResults.normals)
+    // console.log('renderPage, queryResults', queryResults)
     let monthNumber = parseInt(month) - 1;
     queryResults.monthlyLow[0].mon = monthNames[monthNumber];
     queryResults.monthlyHigh[0].mon = monthNames[monthNumber];
@@ -316,19 +302,19 @@ app.get('/:place/on/:when', (req, res) => {
     let precip = daily.filter(r => r.record_type === 'PRCPHI')
     precip.forEach(r => r.value = (r.value / 100).toFixed(2) + '"');
 
-    let avgHigh = normals.filter(n => n.record_type === 'normal_max')
+    let avgHigh = normals.filter(n => n.record_type === 'TAVGHI')
     if ( avgHigh.length > 0 ){
       avgHigh = avgHigh[0].value;
     } else {
       avgHigh = '--'
     }
-    let avgLow = normals.filter(n => n.record_type === 'normal_min');
+    let avgLow = normals.filter(n => n.record_type === 'TAVGLO');
     if ( avgLow.length > 0 ){
       avgLow = avgLow[0].value;
     } else {
       avgLow = '--'
     }
-    let avg = normals.filter(n => n.record_type === 'normal_avg');
+    let avg = normals.filter(n => n.record_type === 'TAVG');
     if ( avg.length > 0 ){
       avg = avg[0].value;
     } else {
