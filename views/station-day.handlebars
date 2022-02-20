@@ -12,6 +12,12 @@
   .monthly {
     padding: 10px 0;
   }
+
+  .prev-next {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 10px;
+  }
 </style>
 
 <div class="records">
@@ -77,6 +83,11 @@
 </div>
 
 {{> start-end-temperature }}
+
+<div class="prev-next">
+  <a href="{{previousDay}}">previous day ({{ previousDay }})</a>
+  <a href="{{nextDay}}">next day ({{ nextDay }})</a>
+</div>
 
 <hr>
 

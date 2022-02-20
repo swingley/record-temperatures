@@ -1,5 +1,3 @@
-'use strict'
-
 const express = require('express');
 const exphbs  = require('express-handlebars');
 const favicon = require('serve-favicon');
@@ -284,6 +282,9 @@ app.get('/:place/on/:when', (req, res) => {
     queryCheck()
   })
 
+  const next = moment(`2000-${when}`, 'YYYY-MM-DD').add(1, 'days').format('MM-DD')
+  const prev = moment(`2000-${when}`, 'YYYY-MM-DD').subtract(1, 'days').format('MM-DD')
+
   let renderPage = () => {
     // console.log('renderPage, normals', moment().format('YYYY-MM-DD--HH:mm:ss'), queryResults.normals)
     // console.log('renderPage, queryResults', queryResults)
@@ -339,7 +340,9 @@ app.get('/:place/on/:when', (req, res) => {
       tempEnd: `${daily[0].temp_year_end}`,
       precip: precip,
       precipStart: `${daily[0].precip_year_start}`,
-      precipEnd: `${daily[0].precip_year_end}`
+      precipEnd: `${daily[0].precip_year_end}`,
+      nextDay: next,
+      previousDay: prev
     });
   };
 });
