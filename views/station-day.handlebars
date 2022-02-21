@@ -20,6 +20,11 @@
   }
 </style>
 
+<div class="prev-next">
+  <a href="{{previousDay}}">previous day ({{ previousDay }})</a>
+  <a href="{{nextDay}}">next day ({{ nextDay }})</a>
+</div>
+
 <div class="records">
   <div>Record Highs</div>
   <ul>
@@ -83,11 +88,6 @@
 </div>
 
 {{> start-end-temperature }}
-
-<div class="prev-next">
-  <a href="{{previousDay}}">previous day ({{ previousDay }})</a>
-  <a href="{{nextDay}}">next day ({{ nextDay }})</a>
-</div>
 
 <hr>
 
