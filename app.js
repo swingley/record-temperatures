@@ -100,11 +100,18 @@ let placeMonthlyRecordLow = (station, month, callback) => {
   return db.all(recordsSql, station, month, callback);
 }
 
+let placeRecordsForYear = (station, callback) => {
+  const recordsSql = queries.placeRecordsForYear
+  return db.all(recordsSql, station, callback)
+}
+
 // Express app and routes.
 let app = express();
 app.use(favicon(__dirname + '/favicon.png'));
 app.engine('handlebars', exphbs({defaultLayout: 'main'}));
-app.set('view engine', 'handlebars');
+app.set('view engine', 'handlebars')
+app.use('/chart-data', express.static('chart-data'))
+app.use('/js', express.static('js'))
 
 app.get('/', (req, res) => {
   res.render('home', { states: stationsByState });
@@ -205,6 +212,7 @@ app.get('/:station([A-Z]{3,8})/on/:when.json', (req, res) => {
 
 app.get('/:place', (req, res) => {
   let place = req.params.place;
+  console.time(place)
   let station = stationLookup[place];
   placeRecords(station, (error, rows) => {
     if ( error ) {
@@ -218,6 +226,7 @@ app.get('/:place', (req, res) => {
     }
     rows.forEach(row => row.mmdd = row.record_date.slice(0, 5));
 
+    console.timeEnd(place)
     res.render('station', {
       station: station,
       records: rows,
@@ -346,6 +355,22 @@ app.get('/:place/on/:when', (req, res) => {
     });
   };
 });
+
+app.get('/chart/:place', (req, res) => {
+  const place = req.params.place
+  const station = stationLookup[place]
+  placeRecordsForYear(station, (error, records) => {
+    if ( error ) {
+      sqliteError(error, res);
+    }
+
+    console.log('records', records)
+    res.render('station-chart', {
+      station,
+      records: JSON.stringify(records)
+    })
+  })
+})
 
 app.listen(port);
 console.log(`Listening on port ${port}`);

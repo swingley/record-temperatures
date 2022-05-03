@@ -1,0 +1,23 @@
+<h3>Records for {{ station }}</h3>
+
+<style>
+  ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  .records {
+    display: inline-block;
+    width: 49%;
+  }
+  .monthly {
+    padding: 10px 0;
+  }
+
+  .prev-next {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 10px;
+  }
+</style>
+
+{{> chart }}

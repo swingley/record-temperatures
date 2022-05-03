@@ -1,5 +1,3 @@
-'use strict'
-
 let queries = {
   all: 'SELECT * FROM inventory ORDER BY station',
   stationRecords: 'SELECT d.*, i.name, i.state ' +
@@ -38,6 +36,11 @@ let queries = {
     'WHERE record_type = \'TMINLO\' ' +
     'AND station = ? ' +
     'AND SUBSTR(record_date, 0, 3) = ?',
+  placeRecordsForYear: 'SELECT value, record_date, record_type ' +
+    'FROM data ' +
+    'WHERE station = ? ' +
+    'AND record_type IN (\'TAVG\', \'TMAXHI\', \'TMINLO\') ' +
+    'AND rank = 1'
 }
 
 module.exports = queries;

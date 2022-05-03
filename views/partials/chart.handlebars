@@ -1,0 +1,23 @@
+<style>
+.annual-chart {
+  height: 400px;
+  position: relative;
+}
+.tip {
+  background: rgb(255 255 255 / 75%);
+  border-radius: 2px;
+  box-shadow: 1px 1px 10px 0px rgba(179,179,179,0.75);
+  font-family: monospace;
+  padding: 5px;
+  width: 100px;
+}
+</style>
+
+<div class="annual-chart"></div>
+<script src="//d3js.org/d3.v7.min.js"></script>
+<script src="/js/chart.js"></script>
+<script>
+fetch('/chart-data/{{station}}.json')
+  .then(response => response.json())
+  .then(data => go(data))
+</script>
